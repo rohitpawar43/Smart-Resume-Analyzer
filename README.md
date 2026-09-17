@@ -1,6 +1,6 @@
 # Smart Resume Analyzer
 
-🚀 **Live demo:** _Add your Render URL here after the first deployment._
+🚀 **Live demo:** https://smart-resume-analyzer-1-gpy2.onrender.com
 
 A Flask web application that reads an uploaded PDF resume, uses a trained artificial neural network (ANN) to predict a suitable job role, and reports matching and missing skills.
 
