@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Resume Analyzer</title>
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px;
+      color: #e0e0e0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    header h1 span { color: #a78bfa; }
+    header p {
+      margin-top: 8px;
+      color: #a0a0b0;
+      font-size: 1rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 28px;
+      backdrop-filter: blur(10px);
+    }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed rgba(167,139,250,0.5);
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .upload-zone:hover {
+      border-color: #a78bfa;
+      background: rgba(167,139,250,0.06);
+    }
+    .upload-zone svg { margin-bottom: 12px; opacity: 0.7; }
+    .upload-zone p { color: #c4c4d4; font-size: 0.95rem; }
+    .upload-zone input { display: none; }
+    #file-name {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #a78bfa;
+    }
+
+    /* ── Button ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 20px;
+    }
+    .btn:hover  { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Flash messages ── */
+    .flash {
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #fca5a5;
+      margin-bottom: 20px;
+      font-size: 0.92rem;
+    }
+
+    /* ── Results ── */
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .result-header h2 { font-size: 1.4rem; color: #fff; }
+    .badge {
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* Score ring */
+    .score-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .score-box {
+      flex: 1;
+      min-width: 140px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .score-box .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+    .score-box .label {
+      font-size: 0.78rem;
+      color: #8080a0;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Progress bar */
+    .progress-wrap { margin-bottom: 8px; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #a0a0b0;
+      margin-bottom: 4px;
+    }
+    .progress-bar-bg {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+      border-radius: 99px;
+      transition: width 1s ease;
+    }
+
+    /* Skills */
+    .skills-grid { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+    .skills-col   { flex: 1; min-width: 200px; }
+    .skills-col h4 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .skill-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin: 3px;
+      font-weight: 500;
+    }
+    .skill-tag.matched {
+      background: rgba(52,211,153,0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(52,211,153,0.3);
+    }
+    .skill-tag.missing {
+      background: rgba(239,68,68,0.12);
+      color: #fca5a5;
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 24px 0; }
+
+    /* Analyze another */
+    .analyze-again {
+      text-align: center;
+      margin-top: 8px;
+    }
+    .link-btn {
+      background: none;
+      border: 1px solid rgba(167,139,250,0.4);
+      color: #a78bfa;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .link-btn:hover { background: rgba(167,139,250,0.1); }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header>
+    <h1>🧠 Smart <span>Resume</span> Analyzer</h1>
+    <p>Upload your resume PDF · Get your predicted role, score &amp; skill gaps instantly</p>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="flash">⚠️ {{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── Upload card (hide if results are shown) ── -->
+  {% if not predicted_role %}
+  <div class="card">
+    <form action="/analyze" method="POST" enctype="multipart/form-data" id="upload-form">
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('resume-input').click()">
+        <!-- Cloud upload icon -->
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none"
+             stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 16 12 12 8 16"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+        <p>Click to browse or drag &amp; drop your <strong>PDF resume</strong></p>
+        <div id="file-name">No file selected</div>
+        <input type="file" name="resume" id="resume-input" accept=".pdf" required
+               onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'No file selected'"/>
+      </div>
+
+      <div style="text-align:center">
+        <button type="submit" class="btn" id="submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Analyze Resume
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- ── Results card ── -->
+  {% if predicted_role %}
+  <div class="card">
+
+    <div class="result-header">
+      <h2>Analysis Results</h2>
+      <span class="badge">{{ filename }}</span>
+    </div>
+
+    <!-- Predicted role -->
+    <p style="color:#a0a0b0; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px;">
+      Best Matching Role
+    </p>
+    <p style="font-size:1.6rem; font-weight:700; color:#a78bfa; margin: 4px 0 20px;">
+      {{ predicted_role }}
+    </p>
+
+    <!-- Score boxes -->
+    <div class="score-row">
+      <div class="score-box">
+        <div class="value">{{ resume_score }}</div>
+        <div class="label">Resume Score / 100</div>
+      </div>
+      <div class="score-box">
+        <div class="value">{{ confidence }}%</div>
+        <div class="label">Model Confidence</div>
+      </div>
+      <div class="score-box">
+        <div class="value">{{ skill_score }}%</div>
+        <div class="label">Skill Match</div>
+      </div>
+    </div>
+
+    <!-- Progress bars -->
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Resume Score</span><span>{{ resume_score }}/100</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: {{ resume_score }}%"></div>
+      </div>
+    </div>
+    <div class="progress-wrap" style="margin-top:10px">
+      <div class="progress-label"><span>Skill Match</span><span>{{ skill_score }}%</span></div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width: {{ skill_score }}%"></div>
+      </div>
+    </div>
+
+    <hr/>
+
+    <!-- Skills -->
+    <div class="skills-grid">
+      <div class="skills-col">
+        <h4 style="color:#6ee7b7">✅ Matched Skills ({{ matched_skills|length }})</h4>
+        {% if matched_skills %}
+          {% for skill in matched_skills %}
+            <span class="skill-tag matched">{{ skill }}</span>
+          {% endfor %}
+        {% else %}
+          <p style="color:#6b7280; font-size:0.85rem">No matching skills found</p>
+        {% endif %}
+      </div>
+
+      <div class="skills-col">
+        <h4 style="color:#fca5a5">❌ Missing Skills ({{ missing_skills|length }})</h4>
+        {% if missing_skills %}
+          {% for skill in missing_skills %}
+            <span class="skill-tag missing">{{ skill }}</span>
+          {% endfor %}
+        {% else %}
+          <p style="color:#6b7280; font-size:0.85rem">No missing skills – great resume!</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <hr/>
+
+    <!-- Scoring formula note -->
+    <p style="font-size:0.78rem; color:#6b7280; margin-bottom:20px">
+      Score formula: <strong style="color:#a0a0b0">70% skill match + 30% model confidence</strong>
+    </p>
+
+    <div class="analyze-again">
+      <a href="/"><button class="link-btn">🔄 Analyze Another Resume</button></a>
+    </div>
+
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  // Show spinner on submit
+  document.getElementById("upload-form")?.addEventListener("submit", function() {
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Analyzing...";
+  });
+
+  // Drag and drop visual feedback
+  const dz = document.getElementById("drop-zone");
+  if (dz) {
+    dz.addEventListener("dragover",  e => { e.preventDefault(); dz.style.borderColor="#a78bfa"; });
+    dz.addEventListener("dragleave", () => { dz.style.borderColor="rgba(167,139,250,0.5)"; });
+    dz.addEventListener("drop", e => {
+      e.preventDefault();
+      const f = e.dataTransfer.files[0];
+      if (f) {
+        const input = document.getElementById("resume-input");
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        input.files = dt.files;
+        document.getElementById("file-name").textContent = f.name;
+      }
+      dz.style.borderColor = "rgba(167,139,250,0.5)";
+    });
+  }
+</script>
+</body>
+</html>
